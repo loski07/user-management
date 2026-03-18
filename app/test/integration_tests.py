@@ -11,7 +11,7 @@ AWS_ENDPOINT_URL: str | None = os.getenv("AWS_ENDPOINT_URL", "http://localhost:4
 AWS_REGION: str = "us-east-1"
 S3_BUCKET: str = "user-avatars"
 DYNAMO_TABLE: str = "users-table"
-TEST_AVATAR_PATH: str = "resources/tux-slash.png"
+TEST_AVATAR_PATH: str = os.path.join(os.path.dirname(__file__), "resources", "tux-slash.png")
 
 
 async def _create_s3_bucket(session: aioboto3.Session) -> None:
