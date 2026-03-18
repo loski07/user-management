@@ -1,15 +1,17 @@
-import os
 import unittest
+from typing import Any, Dict
 from unittest.mock import AsyncMock, patch, MagicMock
 
-# Set dummy environment variables before importing the app to satisfy the startup check
-os.environ['S3_BUCKET_NAME'] = 'test-bucket'
-os.environ['DYNAMODB_TABLE_NAME'] = 'test-table'
-
-from fastapi.testclient import TestClient
 from fastapi import HTTPException
-from app.src.main import app
-from typing import Any, Dict
+from fastapi.testclient import TestClient
+
+from app.src.config import AppSettings
+from app.src.main import app, get_settings
+
+# --- Test Setup ---
+# Override the settings dependency for all tests
+test_settings = AppSettings(s3_bucket_name='test-bucket', dynamodb_table_name='test-table')
+app.dependency_overrides[get_settings] = lambda: test_settings
 
 class TestUserEndpoints(unittest.TestCase):
     client: TestClient
@@ -23,7 +25,7 @@ class TestUserEndpoints(unittest.TestCase):
         self.test_data: Dict[str, str] = {
             "name": "Test",
             "email": "test@test.com",
-            "avatar_url": "http://s3/test.png"
+            "avatar_url": f"https://{test_settings.s3_bucket_name}.s3.{test_settings.aws_region}.amazonaws.com/test.png"
         }
 
     # --- Tests for GET /users ---
@@ -79,7 +81,7 @@ class TestUserEndpoints(unittest.TestCase):
         self.assertEqual(response.json()["email"], self.test_data["email"])
         mock_upload_s3.assert_awaited_once()
         mock_save_db.assert_awaited_once_with(
-            self.test_data["name"], self.test_data["email"], self.test_data["avatar_url"]
+            self.test_data["name"], self.test_data["email"], self.test_data["avatar_url"], test_settings
         )
 
     @patch("app.src.main._upload_avatar_to_s3")
