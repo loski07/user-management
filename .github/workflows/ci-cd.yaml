@@ -67,17 +67,6 @@ jobs:
         # Give Localstack a moment after health check passes, especially for initial setup
         run: sleep 10
 
-      - name: Initialize Localstack AWS resources
-        working-directory: ./app
-        env:
-          AWS_ENDPOINT_URL: http://localhost:4566
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test
-          AWS_REGION: us-east-1
-          S3_BUCKET_NAME: user-avatars # From integration_tests.py
-          DYNAMODB_TABLE_NAME: users-table # From integration_tests.py
-        run: ./init-aws.sh
-
       - name: Run Integration Tests
         working-directory: ./app
         env:
