@@ -1,10 +1,15 @@
 import os
+import threading
+import time
 from typing import Any, AsyncGenerator, Dict, List
 
 import aioboto3
 import httpx
 import pytest
 import pytest_asyncio
+import uvicorn
+
+from app.src.main import app as fastapi_app
 
 BASE_URL: str = "http://localhost:8000"
 AWS_ENDPOINT_URL: str | None = os.getenv("AWS_ENDPOINT_URL", "http://localhost:4566")
@@ -58,11 +63,22 @@ async def _teardown_dynamodb_table(session: aioboto3.Session) -> None:
         await dynamo_client.delete_table(TableName=DYNAMO_TABLE)
 
 
+def _run_fastapi_app() -> None:
+    """
+    Runs the FastAPI application using uvicorn."""
+    uvicorn.run(fastapi_app, host="0.0.0.0", port=8000, log_level="info")
+
+
 @pytest_asyncio.fixture(scope="module", autouse=True)
 async def setup_infrastructure() -> AsyncGenerator[None, None]:
     """
-    Set up and tear down the required AWS infrastructure in LocalStack.
+    Set up and tear down the required AWS infrastructure in LocalStack and start/stop the FastAPI app.
     """
+    api_thread = threading.Thread(target=_run_fastapi_app)
+    api_thread.daemon = True
+    api_thread.start()
+    time.sleep(5)
+
     session: aioboto3.Session = aioboto3.Session(
         aws_access_key_id="test", aws_secret_access_key="test", region_name=AWS_REGION
     )
@@ -80,8 +96,8 @@ async def _create_user(client: httpx.AsyncClient, name: str, email: str) -> None
     :param name: The name of the user to create.
     :param email: The email of the user to create.
     """
-    with open(TEST_AVATAR_PATH, "rb") as imgf:
-        img_raw: bytes = imgf.read()
+    with open(TEST_AVATAR_PATH, "rb") as image_file:
+        img_raw: bytes = image_file.read()
 
     payload: Dict[str, str] = {"name": name, "email": email}
     files: Dict[str, Any] = {"avatar": ("pixel.png", img_raw, "image/png")}
