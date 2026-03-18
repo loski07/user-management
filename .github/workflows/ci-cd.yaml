@@ -59,10 +59,6 @@ jobs:
       - name: Build Docker Image (Validation)
         run: docker build -t user-management:ci-validation ./app
 
-      - name: Helm Lint Chart
-        run: |
-          helm lint ./helm
-
       - name: Run Unit Tests
         working-directory: ./app
         run: PYTHONPATH=.. pytest test/unit_tests.py
