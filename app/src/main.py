@@ -7,7 +7,7 @@ import uvicorn
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, EmailStr
 
-from config import AppSettings, get_settings
+from .config import AppSettings, get_settings
 
 app: FastAPI = FastAPI(title="User Management Service")
 
