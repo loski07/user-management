@@ -10,8 +10,9 @@ from app.src.main import app, get_settings
 
 # --- Test Setup ---
 # Override the settings dependency for all tests
-test_settings = AppSettings(s3_bucket_name='test-bucket', dynamodb_table_name='test-table')
+test_settings = AppSettings(s3_bucket_name="test-bucket", dynamodb_table_name="test-table")
 app.dependency_overrides[get_settings] = lambda: test_settings
+
 
 class TestUserEndpoints(unittest.TestCase):
     client: TestClient
@@ -25,7 +26,7 @@ class TestUserEndpoints(unittest.TestCase):
         self.test_data: Dict[str, str] = {
             "name": "Test",
             "email": "test@test.com",
-            "avatar_url": f"https://{test_settings.s3_bucket_name}.s3.{test_settings.aws_region}.amazonaws.com/test.png"
+            "avatar_url": f"https://{test_settings.s3_bucket_name}.s3.{test_settings.aws_region}.amazonaws.com/test.png",
         }
 
     # --- Tests for GET /users ---

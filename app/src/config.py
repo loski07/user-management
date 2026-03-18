@@ -9,11 +9,12 @@ class AppSettings(BaseSettings):
     Pydantic raises a ValidationError if required settings (those without a default)
     are not found as environment variables.
     """
+
     s3_bucket_name: str
     dynamodb_table_name: str
     aws_region: str = "us-east-1"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8', extra='ignore')
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 
 @lru_cache
