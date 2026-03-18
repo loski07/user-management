@@ -1,10 +1,10 @@
 import os
 import uuid
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import aioboto3
 import uvicorn
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, EmailStr
 
 from config import AppSettings, get_settings

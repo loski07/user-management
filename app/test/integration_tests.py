@@ -1,9 +1,10 @@
-import pytest
-import httpx
-import aioboto3
 import os
+from typing import Any, AsyncGenerator, Dict, List
+
+import aioboto3
+import httpx
+import pytest
 import pytest_asyncio
-from typing import AsyncGenerator, Dict, Any, List
 
 BASE_URL: str = "http://localhost:8000"
 AWS_ENDPOINT_URL: str | None = os.getenv("AWS_ENDPOINT_URL", "http://localhost:4566")
