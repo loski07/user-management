@@ -1,0 +1,26 @@
+services:
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=s3,dynamodb
+      - DEBUG=1
+    volumes:
+      - "./init-aws.sh:/etc/localstack/init/ready.d/init-aws.sh"
+
+  api:
+    image: usermanager
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - AWS_ENDPOINT_URL=http://localstack:4566
+      - S3_BUCKET_NAME=user-avatars
+      - DYNAMODB_TABLE_NAME=users-table
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_REGION=us-east-1
+    depends_on:
+      - localstack
