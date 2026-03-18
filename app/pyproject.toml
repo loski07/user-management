@@ -1,0 +1,47 @@
+[project]
+name = "user-management-service"
+version = "0.1.0"
+description = "FastAPI service for managing users with S3 and DynamoDB"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    { name = "Pablo Diaz", email = "loski07@gmail.com" }
+]
+dependencies = [
+    "fastapi>=0.135.1",
+    "uvicorn[standard]>=0.41.0",
+    "python-multipart>=0.0.9",
+    "aioboto3>=15.5.0",
+    "pydantic[email]>=2.12.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.2",
+    "httpx>=0.28.1",
+    "pytest-asyncio>=0.26.0",
+    "black>=26.3.1",
+    "isort>=7.0.0",
+    "mypy>=1.19.1",
+]
+
+[build-system]
+requires = ["setuptools>=82.0.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 120
+target-version = ["py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "module"
