@@ -48,7 +48,7 @@ jobs:
           pip install -e ./app[dev]
 
       - name: Run Black Linter
-        run: black --check ./app
+        run: black -l 120 --check ./app
 
       - name: Run isort Linter
         run: isort --check-only ./app

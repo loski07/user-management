@@ -9,19 +9,16 @@ from pydantic import BaseModel, EmailStr
 
 from config import AppSettings, get_settings
 
-# --- FastAPI App Initialization ---
 app: FastAPI = FastAPI(title="User Management Service")
 
-# --- AWS Session ---
 session: aioboto3.Session = aioboto3.Session()
 
-# --- Pydantic Models ---
+
 class UserResponse(BaseModel):
     name: str
     email: EmailStr
     avatar_url: str
 
-# --- Helper Functions ---
 
 async def _upload_avatar_to_s3(avatar: UploadFile, settings: AppSettings) -> str:
     """
@@ -37,14 +34,12 @@ async def _upload_avatar_to_s3(avatar: UploadFile, settings: AppSettings) -> str
     try:
         async with session.client("s3", region_name=settings.aws_region) as s3_client:
             await s3_client.upload_fileobj(
-                avatar.file,
-                settings.s3_bucket_name,
-                file_key,
-                ExtraArgs={"ContentType": avatar.content_type}
+                avatar.file, settings.s3_bucket_name, file_key, ExtraArgs={"ContentType": avatar.content_type}
             )
         return f"https://{settings.s3_bucket_name}.s3.{settings.aws_region}.amazonaws.com/{file_key}"
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"S3 Upload failed: {str(e)}")
+
 
 async def _save_user_to_dynamodb(name: str, email: EmailStr, avatar_url: str, settings: AppSettings) -> Dict[str, str]:
     """
@@ -56,11 +51,7 @@ async def _save_user_to_dynamodb(name: str, email: EmailStr, avatar_url: str, se
     :return: A dictionary containing the user's data.
     :raise HTTPException: If the database write operation fails.
     """
-    user_data: Dict[str, str] = {
-        "email": str(email),
-        "name": name,
-        "avatar_url": avatar_url
-    }
+    user_data: Dict[str, str] = {"email": str(email), "name": name, "avatar_url": avatar_url}
     try:
         async with session.resource("dynamodb", region_name=settings.aws_region) as dynamo_resource:
             table = await dynamo_resource.Table(settings.dynamodb_table_name)
@@ -69,7 +60,6 @@ async def _save_user_to_dynamodb(name: str, email: EmailStr, avatar_url: str, se
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database write failed: {str(e)}")
 
-# --- API Endpoints ---
 
 @app.get("/users", response_model=List[UserResponse])
 async def get_users(settings: AppSettings = Depends(get_settings)) -> List[Dict[str, Any]]:
@@ -87,12 +77,13 @@ async def get_users(settings: AppSettings = Depends(get_settings)) -> List[Dict[
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database scan failed: {str(e)}")
 
+
 @app.post("/user", response_model=UserResponse, status_code=201)
 async def create_user(
     name: str = Form(...),
     email: EmailStr = Form(...),
     avatar: UploadFile = File(...),
-    settings: AppSettings = Depends(get_settings)
+    settings: AppSettings = Depends(get_settings),
 ) -> Dict[str, str]:
     """
     Creates a new user.
@@ -106,5 +97,6 @@ async def create_user(
     user_data: Dict[str, str] = await _save_user_to_dynamodb(name, email, avatar_url, settings)
     return user_data
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", log_level="info")

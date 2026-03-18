@@ -5,15 +5,13 @@ import os
 import pytest_asyncio
 from typing import AsyncGenerator, Dict, Any, List
 
-# --- Constants ---
 BASE_URL: str = "http://localhost:8000"
 AWS_ENDPOINT_URL: str | None = os.getenv("AWS_ENDPOINT_URL", "http://localhost:4566")
 AWS_REGION: str = "us-east-1"
 S3_BUCKET: str = "user-avatars"
 DYNAMO_TABLE: str = "users-table"
-TEST_AVATAR_PATH: str = 'resources/tux-slash.png'
+TEST_AVATAR_PATH: str = "resources/tux-slash.png"
 
-# --- Helper Functions for Infrastructure ---
 
 async def _create_s3_bucket(session: aioboto3.Session) -> None:
     """
@@ -23,6 +21,7 @@ async def _create_s3_bucket(session: aioboto3.Session) -> None:
     async with session.client("s3", endpoint_url=AWS_ENDPOINT_URL, region_name=AWS_REGION) as s3:
         await s3.create_bucket(Bucket=S3_BUCKET)
 
+
 async def _create_dynamodb_table(session: aioboto3.Session) -> None:
     """
     Creates the DynamoDB table required for the tests and waits for it to exist.
@@ -31,11 +30,12 @@ async def _create_dynamodb_table(session: aioboto3.Session) -> None:
     async with session.resource("dynamodb", endpoint_url=AWS_ENDPOINT_URL, region_name=AWS_REGION) as dynamo:
         table = await dynamo.create_table(
             TableName=DYNAMO_TABLE,
-            KeySchema=[{'AttributeName': 'email', 'KeyType': 'HASH'}],
-            AttributeDefinitions=[{'AttributeName': 'email', 'AttributeType': 'S'}],
-            ProvisionedThroughput={'ReadCapacityUnits': 5, 'WriteCapacityUnits': 5}
+            KeySchema=[{"AttributeName": "email", "KeyType": "HASH"}],
+            AttributeDefinitions=[{"AttributeName": "email", "AttributeType": "S"}],
+            ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
         await table.wait_until_exists()
+
 
 async def _teardown_s3_bucket(session: aioboto3.Session) -> None:
     """
@@ -47,6 +47,7 @@ async def _teardown_s3_bucket(session: aioboto3.Session) -> None:
         await bucket.objects.all().delete()
         await bucket.delete()
 
+
 async def _teardown_dynamodb_table(session: aioboto3.Session) -> None:
     """
     Deletes the DynamoDB table used for the tests.
@@ -55,7 +56,6 @@ async def _teardown_dynamodb_table(session: aioboto3.Session) -> None:
     async with session.client("dynamodb", endpoint_url=AWS_ENDPOINT_URL, region_name=AWS_REGION) as dynamo_client:
         await dynamo_client.delete_table(TableName=DYNAMO_TABLE)
 
-# --- Test Fixtures ---
 
 @pytest_asyncio.fixture(scope="module", autouse=True)
 async def setup_infrastructure() -> AsyncGenerator[None, None]:
@@ -63,9 +63,7 @@ async def setup_infrastructure() -> AsyncGenerator[None, None]:
     Set up and tear down the required AWS infrastructure in LocalStack.
     """
     session: aioboto3.Session = aioboto3.Session(
-        aws_access_key_id="test",
-        aws_secret_access_key="test",
-        region_name=AWS_REGION
+        aws_access_key_id="test", aws_secret_access_key="test", region_name=AWS_REGION
     )
     await _create_s3_bucket(session)
     await _create_dynamodb_table(session)
@@ -73,7 +71,6 @@ async def setup_infrastructure() -> AsyncGenerator[None, None]:
     await _teardown_s3_bucket(session)
     await _teardown_dynamodb_table(session)
 
-# --- Helper Functions for API Interaction ---
 
 async def _create_user(client: httpx.AsyncClient, name: str, email: str) -> None:
     """
@@ -82,7 +79,7 @@ async def _create_user(client: httpx.AsyncClient, name: str, email: str) -> None
     :param name: The name of the user to create.
     :param email: The email of the user to create.
     """
-    with open(TEST_AVATAR_PATH, 'rb') as imgf:
+    with open(TEST_AVATAR_PATH, "rb") as imgf:
         img_raw: bytes = imgf.read()
 
     payload: Dict[str, str] = {"name": name, "email": email}
@@ -93,6 +90,7 @@ async def _create_user(client: httpx.AsyncClient, name: str, email: str) -> None
     assert post_res.status_code == 201, f"Failed to create user. Response: {post_res.json()}"
     created_user: Dict[str, Any] = post_res.json()
     assert S3_BUCKET in created_user["avatar_url"]
+
 
 async def _verify_user_in_list(client: httpx.AsyncClient, email: str) -> None:
     """
@@ -106,7 +104,6 @@ async def _verify_user_in_list(client: httpx.AsyncClient, email: str) -> None:
     user_emails: List[str] = [u["email"] for u in users]
     assert email in user_emails, f"User with email {email} not found in user list."
 
-# --- Main Test ---
 
 @pytest.mark.asyncio
 async def test_full_user_flow_integration() -> None:
