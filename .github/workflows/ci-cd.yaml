@@ -10,7 +10,7 @@ on:
       - 'app/init-aws.sh'
       - 'app/pyproject.toml'
       - 'helm'
-      - '.github/workflows/ci-cd.yaml' # Always run CI if workflow itself changes
+      - '.github/workflows/ci-cd.yaml'
   push:
     branches: [ master ]
 
@@ -27,7 +27,7 @@ jobs:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
         ports:
-          - "4566:4566" # Default Localstack port
+          - "4566:4566"
         options: >-
           --health-cmd "curl http://localhost:4566/health || exit 1"
           --health-interval 10s
@@ -40,7 +40,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13' # Based on Dockerfile
+          python-version: '3.13'
 
       - name: Install dependencies
         run: |
@@ -77,6 +77,15 @@ jobs:
           S3_BUCKET_NAME: user-avatars # From integration_tests.py
           DYNAMODB_TABLE_NAME: users-table # From integration_tests.py
         run: PYTHONPATH=.. pytest test/integration_tests.py
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Helm Lint Chart
+        run: helm lint ./helm
+
+      - name: Helm Template Validation
+        run: helm template user-management ./helm
 
   cd:
     name: Continuous Deployment
