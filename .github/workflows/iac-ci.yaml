@@ -1,0 +1,55 @@
+name: CI Pipeline of the IaC
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'IaC'
+      - '.github/workflows/iac-ci.yaml'
+
+jobs:
+  app-ci:
+    name: IaC CI
+    runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        env:
+          SERVICES: s3,dynamodb,iam,sts
+          DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+        ports:
+          - "4566:4566"
+        options: >-
+          --health-cmd "curl http://localhost:4566/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.14"
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./IaC
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ./IaC
+
+      - name: Run Terraform Tests
+        run: |
+          terraform test \
+            -var="is_local_test=true" \
+            -var="eks_oidc_issuer_url=https://localhost:4566"
+        working-directory: ./IaC
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
