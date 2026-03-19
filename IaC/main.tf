@@ -12,6 +12,11 @@ resource "aws_dynamodb_table" "users_table" {
     Environment = var.is_local_test ? "localstack" : "production"
   }
 
+  attribute {
+    name = "email"
+    type = "S"
+  }
+
   lifecycle {
     ignore_changes = [
       read_capacity,
