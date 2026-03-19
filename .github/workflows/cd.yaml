@@ -54,4 +54,4 @@ jobs:
       - name: Package and push Helm chart
         run: |
           helm package ./helm
-          helm push user-management-${{ steps.set_version.outputs.version }}.tgz oci://ghcr.io/${{ github.repository }}
+          helm push user-management-${{ steps.set_version.outputs.version }}.tgz oci://ghcr.io/${{ github.repository }}/charts
