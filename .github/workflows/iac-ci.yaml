@@ -15,7 +15,7 @@ jobs:
       localstack:
         image: localstack/localstack:latest
         env:
-          SERVICES: s3,dynamodb
+          SERVICES: s3,dynamodb,iam,sts
           DEFAULT_REGION: us-east-1
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
@@ -30,7 +30,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: 2. Setup Terraform
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "~> 1.14"
