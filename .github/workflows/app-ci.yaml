@@ -1,0 +1,72 @@
+name: CI Pipeline of the application
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'app/src'
+      - 'app/Dockerfile'
+      - 'app/docker-compose.yaml'
+      - 'app/init-aws.sh'
+      - 'app/pyproject.toml'
+      - '.github/workflows/app-ci.yaml'
+
+jobs:
+  app-ci:
+    name: Application CI
+    runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack:latest
+        env:
+          SERVICES: s3,dynamodb
+          DEFAULT_REGION: us-east-1
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+        ports:
+          - "4566:4566"
+        options: >-
+          --health-cmd "curl http://localhost:4566/health || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ./app[dev]
+
+      - name: Run Black Linter
+        run: black -l 120 --check ./app
+
+      - name: Run isort Linter
+        run: isort --check-only ./app
+
+      - name: Run Mypy Type Checker
+        run: mypy ./app
+
+      - name: Build Docker Image (Validation)
+        run: docker build -t user-management:ci-validation ./app
+
+      - name: Run Unit Tests
+        working-directory: ./app
+        run: PYTHONPATH=.. pytest test/unit_tests.py
+
+      - name: Run Integration Tests
+        working-directory: ./app
+        env:
+          AWS_ENDPOINT_URL: http://localhost:4566
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_REGION: us-east-1
+          S3_BUCKET_NAME: user-avatars
+          DYNAMODB_TABLE_NAME: users-table
+        run: PYTHONPATH=.. pytest test/integration_tests.py
