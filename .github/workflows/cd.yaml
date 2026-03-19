@@ -1,0 +1,54 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  cd:
+    name: Build and push artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine Image Version
+        id: set_version
+        env:
+          VERSION_OVERRIDE: ""
+          PROJECT_PATH: "app"
+        run: ./.github/scripts/get_app_version_from_toml.sh
+
+      - name: Build and push Docker image
+        id: docker_build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./app
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/user-management:latest
+            ghcr.io/${{ github.repository }}/user-management:${{ steps.set_version.outputs.version }}
+            ghcr.io/${{ github.repository }}/user-management:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+
+      - name: Log in to GitHub Packages (Helm)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Package and push Helm chart
+        run: |
+          helm package ./helm
+          helm push user-management-${{ steps.set_version.outputs.version }}.tgz oci://ghcr.io/${{ github.repository }}
