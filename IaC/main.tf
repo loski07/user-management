@@ -59,7 +59,7 @@ data "aws_iam_openid_connect_provider" "oidc_provider" {
 }
 
 locals {
-  oidc_url_stripped = replace(var.eks_oidc_issuer_url, "https://", "")
+  oidc_url_stripped = replace(var.localstack_endpoint, "https://", "")
 
   # For LocalStack, use a dummy ARN. For AWS, use the data source.
   oidc_arn = var.is_local_test ? "arn:aws:iam::000000000000:oidc-provider/localstack" : data.aws_iam_openid_connect_provider.oidc_provider[0].arn

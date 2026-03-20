@@ -8,4 +8,11 @@ variable "eks_oidc_issuer_url" {
   type        = string
   default     = "https://localhost:4566"
   description = "The URL of the OIDC Identity Provider (e.g. https://oidc.eks.us-east-1.amazonaws.com/id/XXX)"
+  # aws eks describe-cluster --name <cluster-name> --query "cluster.identity.oidc.issuer" --output text
+}
+
+variable "localstack_endpoint" {
+  type        = string
+  default     = "http://localhost:4566"
+  description = "The URL of the localstack server"
 }
